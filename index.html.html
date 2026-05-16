@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Shapes Explorer – Maryam Qurashi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap');
+
+  :root {
+    --pink: #FF6B9D;
+    --purple: #9B59B6;
+    --blue: #3498DB;
+    --teal: #1ABC9C;
+    --orange: #FF8C42;
+    --yellow: #FFD93D;
+    --green: #6BCB77;
+    --red: #FF4757;
+    --bg: #FFF9F0;
+    --card: #FFFFFF;
+    --text: #2C3E50;
+    --shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    background: linear-gradient(135deg, #FF6B9D 0%, #9B59B6 50%, #3498DB 100%);
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    color: white;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+    position: relative;
+  }
+  header h1 span { color: #FFD93D; }
+  header p.subtitle {
+    color: rgba(255,255,255,0.9);
+    font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+    margin-top: 6px;
+    font-weight: 700;
+    position: relative;
+  }
+  .star-bg { position: absolute; top: 10px; font-size: 1.5rem; animation: twinkle 2s infinite; }
+  @keyframes twinkle { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ===== NAV ===== */
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    background: white;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  nav button {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: clamp(0.75rem, 2vw, 0.95rem);
+    padding: 10px 18px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f0f0f0;
+    color: #666;
+  }
+  nav button:hover, nav button.active {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    color: white;
+  }
+  nav button:nth-child(1).active { background: var(--purple); }
+  nav button:nth-child(2).active { background: var(--blue); }
+  nav button:nth-child(3).active { background: var(--teal); }
+  nav button:nth-child(4).active { background: var(--orange); }
+  nav button:nth-child(5).active { background: var(--pink); }
+  nav button:nth-child(6).active { background: var(--green); }
+  nav button:nth-child(7).active { background: var(--red); }
+  nav button:nth-child(1):hover { background: var(--purple); }
+  nav button:nth-child(2):hover { background: var(--blue); }
+  nav button:nth-child(3):hover { background: var(--teal); }
+  nav button:nth-child(4):hover { background: var(--orange); }
+  nav button:nth-child(5):hover { background: var(--pink); }
+  nav button:nth-child(6):hover { background: var(--green); }
+  nav button:nth-child(7):hover { background: var(--red); }
+
+  /* ===== SECTIONS ===== */
+  .section { display: none; padding: 24px 16px; max-width: 1200px; margin: 0 auto; }
+  .section.active { display: block; }
+
+  .section-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  /* ===== 3D LAB ===== */
+  #lab { max-width: 1200px; }
+
+  .lab-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr 260px;
+    gap: 16px;
+    align-items: start;
+  }
+  @media(max-width: 900px) {
+    .lab-layout { grid-template-columns: 1fr; }
+  }
+
+  .shape-list {
+    background: white;
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  .shape-list h3 { font-family:'Fredoka One',cursive; font-size:1.1rem; margin-bottom:10px; color:var(--purple); }
+  .shape-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    background: #f8f8f8;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .shape-btn:hover { background: #e8f4ff; border-color: var(--blue); transform: translateX(4px); }
+  .shape-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: transparent; }
+  .shape-btn .icon { font-size: 1.4rem; }
+
+  .canvas-area {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 24px;
+    position: relative;
+    overflow: hidden;
+    min-height: 500px;
+    box-shadow: var(--shadow);
+  }
+  #threeCanvas { width: 100% !important; height: 100% !important; display: block; border-radius: 24px; }
+
+  .canvas-controls {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .ctrl-btn {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 30px;
+    padding: 8px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ctrl-btn:hover, .ctrl-btn.on { background: rgba(255,255,255,0.35); }
+
+  .toggle-row {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .tog-btn {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(8px);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tog-btn.active { border-color: var(--yellow); background: rgba(255,217,61,0.25); color: var(--yellow); }
+
+  .info-panel {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .info-panel h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    color: var(--purple);
+    margin-bottom: 14px;
+  }
+  .attr-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+  }
+  .attr-card .attr-icon { font-size: 1.8rem; }
+  .attr-card .attr-val { font-size: 1.8rem; font-weight: 900; }
+  .attr-card .attr-label { font-size: 0.8rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .attr-face { background: #FFF3E0; }
+  .attr-edge { background: #E3F2FD; }
+  .attr-vert { background: #F3E5F5; }
+  .attr-surf { background: #E8F5E9; }
+  .example-box {
+    background: linear-gradient(135deg, #FFD93D20, #FF6B9D20);
+    border-radius: 14px;
+    padding: 14px;
+    margin-top: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  .example-box strong { color: var(--orange); }
+
+  /* ===== 2D SECTION ===== */
+  .shapes2d-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .shape2d-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 3px solid transparent;
+  }
+  .shape2d-card:hover { transform: translateY(-6px) scale(1.04); box-shadow: 0 16px 40px rgba(0,0,0,0.15); }
+  .shape2d-card.selected { border-color: var(--purple); }
+  .shape2d-card svg { width: 80px; height: 80px; }
+  .shape2d-card h3 { font-family:'Fredoka One',cursive; font-size: 1.1rem; margin-top: 10px; }
+  .shape2d-card p { font-size: 0.8rem; color: #888; font-weight: 700; }
+
+  /* ===== ACTIVITIES ===== */
+  .activity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .activity-card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px 20px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 3px solid transparent;
+  }
+  .activity-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.15); }
+  .activity-card .act-icon { font-size: 3rem; margin-bottom: 12px; }
+  .activity-card h3 { font-family: 'Fredoka One', cursive; font-size: 1.2rem; margin-bottom: 8px; }
+  .activity-card p { font-size: 0.85rem; color: #888; font-weight: 600; }
+
+  .activity-area {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    min-height: 300px;
+  }
+  .activity-area h2 { font-family:'Fredoka One',cursive; font-size:1.6rem; margin-bottom:16px; }
+
+  /* Quiz */
+  .quiz-shape-display {
+    width: 200px; height: 200px;
+    margin: 0 auto 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8rem;
+  }
+  .quiz-question { font-size: 1.4rem; font-weight: 800; text-align: center; margin-bottom: 20px; }
+  .quiz-options { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .quiz-opt {
+    padding: 14px 24px;
+    border: 3px solid #e0e0e0;
+    border-radius: 50px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+  }
+  .quiz-opt:hover { border-color: var(--purple); transform: scale(1.05); }
+  .quiz-opt.correct { background: var(--green); border-color: var(--green); color: white; }
+  .quiz-opt.wrong { background: var(--red); border-color: var(--red); color: white; }
+
+  /* Drag Drop */
+  .dnd-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .dnd-item {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 14px;
+    font-weight: 800;
+    cursor: grab;
+    font-size: 1.2rem;
+    user-select: none;
+    transition: all 0.2s;
+  }
+  .dnd-item:hover { transform: scale(1.05); }
+  .dnd-target {
+    min-width: 160px;
+    min-height: 60px;
+    border: 3px dashed #ccc;
+    border-radius: 14px;
+    padding: 10px;
+    font-weight: 700;
+    color: #999;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .dnd-target.over { border-color: var(--purple); background: #f0e6ff; }
+  .dnd-target.correct { border-color: var(--green); background: #e8f5e9; }
+  .dnd-target.wrong { border-color: var(--red); background: #ffebee; }
+
+  /* True/False */
+  .tf-statement { font-size: 1.3rem; font-weight: 800; text-align: center; padding: 24px; background: #f8f8f8; border-radius: 16px; margin-bottom: 20px; }
+  .tf-buttons { display: flex; gap: 20px; justify-content: center; }
+  .tf-btn {
+    padding: 16px 40px;
+    font-size: 1.3rem;
+    font-weight: 900;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Nunito', sans-serif;
+  }
+  .tf-true { background: var(--green); color: white; }
+  .tf-false { background: var(--red); color: white; }
+  .tf-btn:hover { transform: scale(1.1); }
+
+  /* Memory */
+  .memory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  @media(max-width:600px) { .memory-grid { grid-template-columns: repeat(3,1fr); } }
+  .mem-card {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    transition: all 0.3s;
+    perspective: 600px;
+    border: 3px solid transparent;
+  }
+  .mem-card.flipped { background: white; border-color: #e0e0e0; }
+  .mem-card.matched { background: linear-gradient(135deg, #56ab2f, #a8e063); border-color: transparent; }
+  .mem-card:hover:not(.matched) { transform: scale(1.08); }
+
+  /* Sorting */
+  .sort-zones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .sort-zone {
+    min-height: 120px;
+    border: 3px dashed #ccc;
+    border-radius: 16px;
+    padding: 12px;
+    transition: all 0.2s;
+  }
+  .sort-zone.over { border-color: var(--purple); background: #f0e6ff; }
+  .sort-zone h3 { font-family:'Fredoka One',cursive; font-size:1.1rem; margin-bottom:8px; }
+  .sort-items { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .sort-item {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #FF6B9D, #9B59B6);
+    color: white;
+    border-radius: 30px;
+    font-weight: 800;
+    cursor: grab;
+    font-size: 0.9rem;
+  }
+
+  /* Feedback */
+  .feedback {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%) scale(0);
+    background: white;
+    border-radius: 24px;
+    padding: 40px 60px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: none;
+  }
+  .feedback.show { transform: translate(-50%,-50%) scale(1); pointer-events: all; }
+  .feedback .fb-icon { font-size: 4rem; }
+  .feedback h2 { font-family:'Fredoka One',cursive; font-size:2rem; margin: 10px 0; }
+  .feedback p { font-size:1rem; color:#888; font-weight:700; }
+
+  /* Confetti */
+  .confetti-piece {
+    position: fixed;
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    animation: confetti-fall 3s forwards;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  @keyframes confetti-fall {
+    0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Score */
+  .score-bar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #f8f8f8; border-radius: 14px; margin-bottom: 20px; font-weight: 800; }
+  .score-bar .stars { font-size: 1.4rem; }
+
+  /* Next Btn */
+  .next-btn, .primary-btn {
+    display: inline-block;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 16px;
+  }
+  .next-btn:hover, .primary-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(102,126,234,0.4); }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 20px;
+    background: white;
+    font-weight: 700;
+    color: #999;
+    font-size: 0.9rem;
+    margin-top: 40px;
+    border-top: 2px solid #f0f0f0;
+  }
+  footer span { color: var(--purple); }
+
+  /* Spin guess */
+  .spin-canvas-wrap { width: 220px; height: 220px; margin: 0 auto 20px; border-radius: 16px; overflow: hidden; background: #1a1a2e; }
+  .guess-options { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+
+  /* Print */
+  @media print {
+    nav, header, footer, .ctrl-btn, .tog-btn, .next-btn, .primary-btn { display: none !important; }
+    .section { display: block !important; page-break-after: always; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="star-bg" style="left:5%;top:20px">⭐</div>
+  <div class="star-bg" style="right:8%;top:15px;animation-delay:0.5s">🌟</div>
+  <div class="star-bg" style="left:15%;top:50%;animation-delay:1s">✨</div>
+  <div class="star-bg" style="right:20%;top:60%;animation-delay:1.5s">⭐</div>
+  <h1>🔷 <span>Shapes</span> Explorer!</h1>
+  <p class="subtitle">Learn 2D &amp; 3D Shapes • Grade 2 • Prepared by Maryam Qurashi</p>
+</header>
+
+<nav>
+  <button class="active" onclick="showSection('lab')">🔬 3D Lab</button>
+  <button onclick="showSection('shapes2d')">🔵 2D Shapes</button>
+  <button onclick="showSection('quiz')">🧠 Quiz</button>
+  <button onclick="showSection('dragdrop')">🎯 Match It!</button>
+  <button onclick="showSection('trueFalse')">✅ True/False</button>
+  <button onclick="showSection('memory')">🃏 Memory</button>
+  <button onclick="showSection('sort')">📦 Sort It!</button>
+</nav>
+
+<!-- ============ 3D LAB ============ -->
+<div id="lab" class="section active">
+  <h2 class="section-title" style="color:var(--purple)">🔬 3D Shapes Lab</h2>
+  <div class="lab-layout">
+    <div class="shape-list">
+      <h3>Pick a Shape!</h3>
+      <button class="shape-btn active" onclick="selectShape('cube')" id="btn-cube"><span class="icon">📦</span> Cube</button>
+      <button class="shape-btn" onclick="selectShape('cuboid')" id="btn-cuboid"><span class="icon">📐</span> Rectangular Prism</button>
+      <button class="shape-btn" onclick="selectShape('cylinder')" id="btn-cylinder"><span class="icon">🥫</span> Cylinder</button>
+      <button class="shape-btn" onclick="selectShape('cone')" id="btn-cone"><span class="icon">🍦</span> Cone</button>
+      <button class="shape-btn" onclick="selectShape('sphere')" id="btn-sphere"><span class="icon">⚽</span> Sphere</button>
+      <button class="shape-btn" onclick="selectShape('triPrism')" id="btn-triPrism"><span class="icon">🔺</span> Triangular Prism</button>
+      <button class="shape-btn" onclick="selectShape('triPyramid')" id="btn-triPyramid"><span class="icon">🔺</span> Triangular Pyramid</button>
+      <button class="shape-btn" onclick="selectShape('sqPyramid')" id="btn-sqPyramid"><span class="icon">⛺</span> Square Pyramid</button>
+      <button class="shape-btn" onclick="selectShape('pentPrism')" id="btn-pentPrism"><span class="icon">🏠</span> Pentagonal Prism</button>
+      <button class="shape-btn" onclick="selectShape('pentPyramid')" id="btn-pentPyramid"><span class="icon">🔺</span> Pentagonal Pyramid</button>
+      <button class="shape-btn" onclick="selectShape('hexPrism')" id="btn-hexPrism"><span class="icon">🔶</span> Hexagonal Prism</button>
+    </div>
+
+    <div class="canvas-area">
+      <div class="toggle-row">
+        <button class="tog-btn" id="tog-faces" onclick="toggleFeature('faces')">👁 Faces</button>
+        <button class="tog-btn" id="tog-edges" onclick="toggleFeature('edges')">✏️ Edges</button>
+        <button class="tog-btn" id="tog-vertices" onclick="toggleFeature('vertices')">🔵 Vertices</button>
+        <button class="tog-btn" id="tog-explode" onclick="toggleFeature('explode')">💥 Explode</button>
+      </div>
+      <canvas id="threeCanvas"></canvas>
+      <div class="canvas-controls">
+        <button class="ctrl-btn" id="autoRotBtn" onclick="toggleAutoRot()">▶ Auto-Rotate</button>
+        <button class="ctrl-btn" onclick="resetView()">↺ Reset</button>
+        <button class="ctrl-btn" onclick="zoomIn()">🔍+</button>
+        <button class="ctrl-btn" onclick="zoomOut()">🔍-</button>
+      </div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+      <h2 id="shapeName">Cube</h2>
+      <div class="attr-card attr-face">
+        <span class="attr-icon">🟧</span>
+        <div><div class="attr-val" id="faces">6</div><div class="attr-label">Faces</div></div>
+      </div>
+      <div class="attr-card attr-edge">
+        <span class="attr-icon">📏</span>
+        <div><div class="attr-val" id="edges">12</div><div class="attr-label">Edges</div></div>
+      </div>
+      <div class="attr-card attr-vert">
+        <span class="attr-icon">🔵</span>
+        <div><div class="attr-val" id="vertices">8</div><div class="attr-label">Vertices</div></div>
+      </div>
+      <div class="attr-card attr-surf">
+        <span class="attr-icon">✋</span>
+        <div><div class="attr-val" style="font-size:1rem" id="surfaces">6 Flat</div><div class="attr-label">Surfaces</div></div>
+      </div>
+      <div class="example-box">
+        <div style="color:#888;font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:4px">Real-Life Example</div>
+        <strong id="realLife">🎲 Dice / Ice Cube</strong>
+      </div>
+      <div class="example-box" style="margin-top:8px">
+        <div style="color:#888;font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:4px">Fun Fact</div>
+        <span id="funFact">All 6 faces are squares!</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 2D SHAPES ============ -->
+<div id="shapes2d" class="section">
+  <h2 class="section-title" style="color:var(--blue)">🔵 2D Shapes</h2>
+  <div class="shapes2d-grid" id="shapes2dGrid"></div>
+  <div class="activity-area" id="shape2dDetail" style="display:none">
+    <h2 id="s2dName"></h2>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+      <div id="s2dSvg" style="flex:0 0 120px"></div>
+      <div>
+        <p style="font-size:1.1rem;margin-bottom:8px"><strong>Sides:</strong> <span id="s2dSides"></span></p>
+        <p style="font-size:1.1rem;margin-bottom:8px"><strong>Corners:</strong> <span id="s2dCorners"></span></p>
+        <p style="font-size:1.1rem;margin-bottom:8px"><strong>Type:</strong> <span id="s2dType"></span></p>
+        <p style="font-size:1.1rem"><strong>Example:</strong> <span id="s2dEx"></span></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ QUIZ ============ -->
+<div id="quiz" class="section">
+  <h2 class="section-title" style="color:var(--orange)">🧠 Shape Quiz!</h2>
+  <div class="score-bar">
+    <div class="stars" id="quizStars">⭐⭐⭐</div>
+    <div>Score: <strong id="quizScore">0</strong> / <strong id="quizTotal">0</strong></div>
+  </div>
+  <div class="activity-area">
+    <div class="quiz-shape-display" id="quizShapeEmoji">📦</div>
+    <div class="quiz-question" id="quizQ">How many faces does a Cube have?</div>
+    <div class="quiz-options" id="quizOpts"></div>
+    <div style="text-align:center"><button class="next-btn" onclick="nextQuiz()" id="nextQuizBtn" style="display:none">Next Question →</button></div>
+  </div>
+</div>
+
+<!-- ============ DRAG DROP ============ -->
+<div id="dragdrop" class="section">
+  <h2 class="section-title" style="color:var(--teal)">🎯 Match the Shape!</h2>
+  <div class="activity-area">
+    <p style="font-weight:700;margin-bottom:16px;color:#888">Drag each shape name to its matching real-life object! 👇</p>
+    <div class="dnd-row" id="dndItems"></div>
+    <div class="dnd-row" style="flex-wrap:wrap" id="dndTargets"></div>
+    <div style="text-align:center;margin-top:16px">
+      <button class="primary-btn" onclick="checkDnd()">Check Answers ✅</button>
+      <button class="next-btn" onclick="resetDnd()">Try Again 🔄</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TRUE/FALSE ============ -->
+<div id="trueFalse" class="section">
+  <h2 class="section-title" style="color:var(--pink)">✅ True or False?</h2>
+  <div class="score-bar">
+    <div class="stars" id="tfStars">⭐⭐⭐</div>
+    <div>Score: <strong id="tfScore">0</strong> / <strong id="tfTotal">0</strong></div>
+  </div>
+  <div class="activity-area">
+    <div class="tf-statement" id="tfStatement">A sphere has edges.</div>
+    <div class="tf-buttons">
+      <button class="tf-btn tf-true" onclick="answerTF(true)">✅ True</button>
+      <button class="tf-btn tf-false" onclick="answerTF(false)">❌ False</button>
+    </div>
+    <div id="tfFeedback" style="text-align:center;font-size:1.2rem;font-weight:800;margin-top:20px;min-height:36px"></div>
+    <div style="text-align:center"><button class="next-btn" onclick="nextTF()" id="nextTFBtn" style="display:none">Next →</button></div>
+  </div>
+</div>
+
+<!-- ============ MEMORY ============ -->
+<div id="memory" class="section">
+  <h2 class="section-title" style="color:var(--green)">🃏 Memory Match!</h2>
+  <div class="score-bar">
+    <div>Pairs Found: <strong id="memPairs">0</strong> / <strong id="memTotal">8</strong></div>
+    <div style="margin-left:auto">Moves: <strong id="memMoves">0</strong></div>
+  </div>
+  <div class="activity-area">
+    <div class="memory-grid" id="memGrid"></div>
+    <div style="text-align:center;margin-top:16px">
+      <button class="primary-btn" onclick="initMemory()">New Game 🔄</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SORT ============ -->
+<div id="sort" class="section">
+  <h2 class="section-title" style="color:var(--red)">📦 Sort the Shapes!</h2>
+  <div class="activity-area">
+    <p style="font-weight:700;margin-bottom:12px;color:#888">Drag shapes into the correct group! 👇</p>
+    <div class="sort-items" id="sortItems"></div>
+    <div class="sort-zones" id="sortZones"></div>
+    <div style="text-align:center">
+      <button class="primary-btn" onclick="checkSort()">Check! ✅</button>
+      <button class="next-btn" onclick="initSort()">Reset 🔄</button>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback overlay -->
+<div class="feedback" id="feedback">
+  <div class="fb-icon" id="fbIcon">🎉</div>
+  <h2 id="fbTitle">Great Job!</h2>
+  <p id="fbMsg">That's correct!</p>
+  <button class="primary-btn" onclick="hideFeedback()">Continue →</button>
+</div>
+
+<footer>
+  🌟 Prepared by <span>Maryam Qurashi</span> • Grade 2 Shapes Explorer • 3D & 2D Learning App 🌟
+</footer>
+
+<script>
+/* ===================================================
+   DATA
+=================================================== */
+const SHAPES3D = {
+  cube:       { name:'Cube',              faces:6,  edges:12, vertices:8,  surfaces:'6 Flat',   realLife:'🎲 Dice / Ice Cube',         fun:'All 6 faces are equal squares!',     emoji:'📦', color:0x4FC3F7 },
+  cuboid:     { name:'Rectangular Prism', faces:6,  edges:12, vertices:8,  surfaces:'6 Flat',   realLife:'📦 Box / Brick / Shoe Box',   fun:'Like a squashed cube!',              emoji:'📐', color:0x81C784 },
+  cylinder:   { name:'Cylinder',          faces:3,  edges:2,  vertices:0,  surfaces:'2 Flat, 1 Curved', realLife:'🥫 Can / Drum',        fun:'It rolls because of the curved surface!', emoji:'🥫', color:0xFF8A65 },
+  cone:       { name:'Cone',              faces:2,  edges:1,  vertices:1,  surfaces:'1 Flat, 1 Curved', realLife:'🍦 Ice Cream Cone',    fun:'Comes to a sharp point called apex!',emoji:'🍦', color:0xFFD54F },
+  sphere:     { name:'Sphere',            faces:1,  edges:0,  vertices:0,  surfaces:'1 Curved', realLife:'⚽ Ball / Globe / Orange',   fun:'No edges, no vertices – perfectly round!', emoji:'⚽', color:0xF48FB1 },
+  triPrism:   { name:'Triangular Prism',  faces:5,  edges:9,  vertices:6,  surfaces:'5 Flat',   realLife:'🍫 Toblerone / Tent',        fun:'Two triangular faces and three rectangles!', emoji:'🔺', color:0xCE93D8 },
+  triPyramid: { name:'Triangular Pyramid',faces:4,  edges:6,  vertices:4,  surfaces:'4 Flat',   realLife:'🔺 Pyramid shape',            fun:'Also called a Tetrahedron!',         emoji:'🔺', color:0x80CBC4 },
+  sqPyramid:  { name:'Square Pyramid',    faces:5,  edges:8,  vertices:5,  surfaces:'5 Flat',   realLife:'🏛️ Egyptian Pyramid',          fun:'The Great Pyramids are square pyramids!', emoji:'⛺', color:0xFFCC80 },
+  pentPrism:  { name:'Pentagonal Prism',  faces:7,  edges:15, vertices:10, surfaces:'7 Flat',   realLife:'💎 Pencil / Crystal',        fun:'Has 2 pentagonal faces!',            emoji:'🏠', color:0xA5D6A7 },
+  pentPyramid:{ name:'Pentagonal Pyramid',faces:6,  edges:10, vertices:6,  surfaces:'6 Flat',   realLife:'🏔️ Mountain shape',           fun:'Has a pentagon base and 5 triangle sides!', emoji:'🔺', color:0xEF9A9A },
+  hexPrism:   { name:'Hexagonal Prism',   faces:8,  edges:18, vertices:12, surfaces:'8 Flat',   realLife:'🍯 Honeycomb / Pencil',      fun:'A honeycomb cell is a hexagonal prism!', emoji:'🔶', color:0x80DEEA }
+};
+
+const SHAPES2D = [
+  { name:'Circle',    sides:0, corners:0, type:'Curved',   example:'🌕 Moon, Coin, Wheel', color:'#FF6B9D',
+    svg:`<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#FF6B9D" opacity="0.85"/></svg>` },
+  { name:'Triangle',  sides:3, corners:3, type:'Straight', example:'🍕 Pizza slice, Road sign', color:'#3498DB',
+    svg:`<svg viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90" fill="#3498DB" opacity="0.85"/></svg>` },
+  { name:'Square',    sides:4, corners:4, type:'Straight', example:'🎲 Tile, Cracker, Window', color:'#FF8C42',
+    svg:`<svg viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" fill="#FF8C42" opacity="0.85"/></svg>` },
+  { name:'Rectangle', sides:4, corners:4, type:'Straight', example:'📱 Phone, Door, Book', color:'#9B59B6',
+    svg:`<svg viewBox="0 0 100 100"><rect x="5" y="20" width="90" height="60" fill="#9B59B6" opacity="0.85"/></svg>` },
+  { name:'Pentagon',  sides:5, corners:5, type:'Straight', example:'🏠 Home plate, Some signs', color:'#1ABC9C',
+    svg:`<svg viewBox="0 0 100 100"><polygon points="50,5 95,36 78,92 22,92 5,36" fill="#1ABC9C" opacity="0.85"/></svg>` },
+  { name:'Hexagon',   sides:6, corners:6, type:'Straight', example:'🍯 Honeycomb cell', color:'#FFD93D',
+    svg:`<svg viewBox="0 0 100 100"><polygon points="50,5 90,27.5 90,72.5 50,95 10,72.5 10,27.5" fill="#FFD93D" opacity="0.85"/></svg>` },
+  { name:'Oval',      sides:0, corners:0, type:'Curved',   example:'🥚 Egg, Almond, Rugby ball', color:'#E74C3C',
+    svg:`<svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="45" ry="28" fill="#E74C3C" opacity="0.85"/></svg>` },
+  { name:'Star',      sides:10,corners:5, type:'Straight', example:'⭐ Star sticker, Starfish', color:'#FF8C42',
+    svg:`<svg viewBox="0 0 100 100"><polygon points="50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35" fill="#FF8C42" opacity="0.85"/></svg>` },
+];
+
+const QUIZ_QUESTIONS = [
+  {shape:'cube',       q:'How many <b>faces</b> does a Cube have?',          ans:6,  opts:[4,6,8,12]},
+  {shape:'cube',       q:'How many <b>edges</b> does a Cube have?',          ans:12, opts:[6,8,10,12]},
+  {shape:'sphere',     q:'How many <b>vertices</b> does a Sphere have?',     ans:0,  opts:[0,1,2,4]},
+  {shape:'cylinder',   q:'How many <b>faces</b> does a Cylinder have?',      ans:3,  opts:[2,3,4,6]},
+  {shape:'cone',       q:'How many <b>vertices</b> does a Cone have?',       ans:1,  opts:[0,1,2,3]},
+  {shape:'sqPyramid',  q:'How many <b>faces</b> does a Square Pyramid have?',ans:5,  opts:[4,5,6,8]},
+  {shape:'triPrism',   q:'How many <b>edges</b> does a Triangular Prism have?', ans:9, opts:[6,7,9,12]},
+  {shape:'cuboid',     q:'How many <b>edges</b> does a Rectangular Prism have?', ans:12, opts:[8,10,12,14]},
+  {shape:'hexPrism',   q:'How many <b>vertices</b> does a Hexagonal Prism have?', ans:12, opts:[6,10,12,18]},
+  {shape:'pentPrism',  q:'How many <b>faces</b> does a Pentagonal Prism have?', ans:7, opts:[5,6,7,10]},
+];
+
+const TF_QUESTIONS = [
+  {stmt:'A sphere has edges.',            ans:false},
+  {stmt:'A cube has 6 faces.',            ans:true},
+  {stmt:'A cone has 2 vertices.',         ans:false},
+  {stmt:'A cylinder has 0 vertices.',     ans:true},
+  {stmt:'A square pyramid has 5 vertices.', ans:true},
+  {stmt:'A triangular prism has 9 edges.', ans:true},
+  {stmt:'A sphere has flat surfaces.',    ans:false},
+  {stmt:'A cube has 8 vertices.',         ans:true},
+  {stmt:'A cone has curved surfaces.',    ans:true},
+  {stmt:'A hexagonal prism has 12 faces.',ans:false},
+  {stmt:'A rectangular prism has 12 edges.', ans:true},
+  {stmt:'A triangular pyramid has 4 faces.', ans:true},
+];
+
+const DND_PAIRS = [
+  {shape:'Cube',              object:'🎲 Dice'},
+  {shape:'Cylinder',          object:'🥫 Soup Can'},
+  {shape:'Cone',              object:'🍦 Ice Cream'},
+  {shape:'Sphere',            object:'⚽ Ball'},
+  {shape:'Rectangular Prism', object:'📦 Cardboard Box'},
+  {shape:'Square Pyramid',    object:'🏛️ Egypt Pyramid'},
+];
+
+const SORT_CATS = {
+  '3D Shapes':['Cube','Sphere','Cylinder','Cone','Pyramid'],
+  '2D Shapes':['Circle','Square','Triangle','Rectangle','Hexagon'],
+};
+
+/* ===================================================
+   THREE.JS
+=================================================== */
+let scene, camera, renderer, currentMesh=[], currentShape='cube';
+let autoRotate=true, isDragging=false, prevMouse={x:0,y:0}, rotGroup;
+let showFaces=false, showEdgesT=false, showVerts=false, explodeMode=false;
+let faceHighlights=[], edgeLines=[], vertDots=[], explodeParts=[];
+
+function initThree(){
+  const canvas = document.getElementById('threeCanvas');
+  const wrap = canvas.parentElement;
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.shadowMap.enabled = true;
+  resizeRenderer();
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, wrap.clientWidth/wrap.clientHeight, 0.1, 1000);
+  camera.position.set(0,1.5,4.5);
+  camera.lookAt(0,0,0);
+
+  // Lights
+  const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+  scene.add(ambient);
+  const dir = new THREE.DirectionalLight(0xffffff,1);
+  dir.position.set(5,10,7);
+  dir.castShadow=true;
+  scene.add(dir);
+  const fill = new THREE.DirectionalLight(0x4FC3F7,0.4);
+  fill.position.set(-5,-5,-5);
+  scene.add(fill);
+
+  // Grid
+  const grid = new THREE.GridHelper(10,10,0x333366,0x222244);
+  grid.position.y = -1.2;
+  scene.add(grid);
+
+  rotGroup = new THREE.Group();
+  scene.add(rotGroup);
+
+  buildShape('cube');
+  animate();
+
+  // Mouse drag
+  canvas.addEventListener('mousedown', e=>{isDragging=true; prevMouse={x:e.clientX,y:e.clientY};});
+  document.addEventListener('mouseup', ()=>isDragging=false);
+  document.addEventListener('mousemove', e=>{
+    if(!isDragging) return;
+    const dx=(e.clientX-prevMouse.x)*0.01;
+    const dy=(e.clientY-prevMouse.y)*0.01;
+    rotGroup.rotation.y += dx;
+    rotGroup.rotation.x += dy;
+    prevMouse={x:e.clientX,y:e.clientY};
+  });
+  // Touch drag
+  canvas.addEventListener('touchstart', e=>{isDragging=true; prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  document.addEventListener('touchend', ()=>isDragging=false);
+  document.addEventListener('touchmove', e=>{
+    if(!isDragging) return;
+    const dx=(e.touches[0].clientX-prevMouse.x)*0.01;
+    const dy=(e.touches[0].clientY-prevMouse.y)*0.01;
+    rotGroup.rotation.y += dx;
+    rotGroup.rotation.x += dy;
+    prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};
+  },{passive:true});
+
+  window.addEventListener('resize', ()=>{resizeRenderer(); camera.aspect=renderer.domElement.width/renderer.domElement.height; camera.updateProjectionMatrix();});
+}
+
+function resizeRenderer(){
+  const wrap = document.querySelector('.canvas-area');
+  if(!wrap) return;
+  const w = wrap.clientWidth||600, h = Math.max(400, Math.min(500, wrap.clientWidth*0.7));
+  renderer.setSize(w, h);
+  if(camera){ camera.aspect = w/h; camera.updateProjectionMatrix(); }
+}
+
+function clearScene(){
+  while(rotGroup.children.length) rotGroup.remove(rotGroup.children[0]);
+  faceHighlights=[]; edgeLines=[]; vertDots=[]; explodeParts=[];
+}
+
+function buildShape(key){
+  clearScene();
+  currentShape=key;
+  const d=SHAPES3D[key];
+  const color=d.color;
+
+  const mat = new THREE.MeshPhongMaterial({color, transparent:true, opacity:0.88, shininess:80});
+  const edgeMat = new THREE.LineBasicMaterial({color:0xffffff, linewidth:2});
+  const faceHLMat = new THREE.MeshPhongMaterial({color:0xFF8A00, transparent:true, opacity:0.75});
+  const vertMat = new THREE.MeshPhongMaterial({color:0xFF3333});
+
+  let geo;
+  const geoms=[];
+
+  switch(key){
+    case 'cube':
+      geo = new THREE.BoxGeometry(1.6,1.6,1.6);
+      geoms.push({g:geo,offset:[0,0,0]});
+      break;
+    case 'cuboid':
+      geo = new THREE.BoxGeometry(2.4,1.2,1.4);
+      geoms.push({g:geo,offset:[0,0,0]});
+      break;
+    case 'cylinder':
+      geo = new THREE.CylinderGeometry(0.9,0.9,2,32);
+      geoms.push({g:geo,offset:[0,0,0]});
+      break;
+    case 'cone':
+      geo = new THREE.ConeGeometry(1,2.2,32);
+      geoms.push({g:geo,offset:[0,0,0]});
+      break;
+    case 'sphere':
+      geo = new THREE.SphereGeometry(1.1,32,32);
+      geoms.push({g:geo,offset:[0,0,0]});
+      break;
+    case 'triPrism':
+      geo = makePrism(3, 0.9, 2.0);
+      geoms.push({g:geo,offset:[0,0,0]});
+      break;
+    case 'triPyramid':
+      geo = makePyramid(3, 0.9, 2.0);
+      geoms.push({g:geo,offset:[0,-0.3,0]});
+      break;
+    case 'sqPyramid':
+      geo = makePyramid(4, 0.9, 2.0);
+      geoms.push({g:geo,offset:[0,-0.3,0]});
+      break;
+    case 'pentPrism':
+      geo = makePrism(5, 0.85, 1.8);
+      geoms.push({g:geo,offset:[0,0,0]});
+      break;
+    case 'pentPyramid':
+      geo = makePyramid(5, 0.85, 1.8);
+      geoms.push({g:geo,offset:[0,-0.3,0]});
+      break;
+    case 'hexPrism':
+      geo = makePrism(6, 0.8, 1.6);
+      geoms.push({g:geo,offset:[0,0,0]});
+      break;
+  }
+
+  geoms.forEach(({g,offset})=>{
+    const mesh = new THREE.Mesh(g, mat.clone());
+    mesh.position.set(...offset);
+    mesh.castShadow=true;
+    rotGroup.add(mesh);
+
+    // Edges
+    const edges = new THREE.EdgesGeometry(g);
+    const line = new THREE.LineSegments(edges, edgeMat.clone());
+    line.visible = false;
+    line.position.set(...offset);
+    rotGroup.add(line);
+    edgeLines.push(line);
+
+    // Vertices dots
+    const posAttr = g.attributes.position;
+    const vSet = new Set();
+    for(let i=0;i<posAttr.count;i++){
+      const x=Math.round(posAttr.getX(i)*100), y=Math.round(posAttr.getY(i)*100), z=Math.round(posAttr.getZ(i)*100);
+      const key2=`${x},${y},${z}`;
+      if(vSet.has(key2)) continue;
+      vSet.add(key2);
+      const vg = new THREE.SphereGeometry(0.07,8,8);
+      const vm = new THREE.Mesh(vg, vertMat.clone());
+      vm.position.set(posAttr.getX(i)+offset[0], posAttr.getY(i)+offset[1], posAttr.getZ(i)+offset[2]);
+      vm.visible=false;
+      rotGroup.add(vm);
+      vertDots.push(vm);
+    }
+
+    // Face highlight
+    const hlMesh = new THREE.Mesh(g, faceHLMat.clone());
+    hlMesh.position.set(...offset);
+    hlMesh.visible=false;
+    rotGroup.add(hlMesh);
+    faceHighlights.push(hlMesh);
+  });
+
+  // Reset toggles
+  showFaces=false; showEdgesT=false; showVerts=false; explodeMode=false;
+  ['tog-faces','tog-edges','tog-vertices','tog-explode'].forEach(id=>document.getElementById(id).classList.remove('active'));
+
+  updateInfoPanel(key);
+}
+
+function makePrism(sides, radius, height){
+  const shape = new THREE.Shape();
+  for(let i=0;i<sides;i++){
+    const angle = (i/sides)*Math.PI*2 - Math.PI/2;
+    const x=Math.cos(angle)*radius, y=Math.sin(angle)*radius;
+    i===0 ? shape.moveTo(x,y) : shape.lineTo(x,y);
+  }
+  shape.closePath();
+  const extrudeSettings = {depth:height, bevelEnabled:false};
+  const g = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  g.translate(0,0,-height/2);
+  // rotate to stand upright
+  const result = g.clone();
+  return result;
+}
+
+function makePyramid(sides, radius, height){
+  const vertices=[];
+  const base=[];
+  for(let i=0;i<sides;i++){
+    const angle = (i/sides)*Math.PI*2 - Math.PI/2;
+    base.push([Math.cos(angle)*radius, 0, Math.sin(angle)*radius]);
+  }
+  const apex = [0, height, 0];
+  const positions=[];
+  const normals=[];
+  const uvs=[];
+
+  // Base face(s)
+  for(let i=1;i<sides-1;i++){
+    positions.push(...base[0], ...base[i], ...base[i+1]);
+  }
+  // Side faces
+  for(let i=0;i<sides;i++){
+    const next=(i+1)%sides;
+    positions.push(...base[i], ...apex, ...base[next]);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions.flat(),3));
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  if(autoRotate && !isDragging) rotGroup.rotation.y += 0.008;
+  renderer.render(scene, camera);
+}
+
+function updateInfoPanel(key){
+  const d=SHAPES3D[key];
+  document.getElementById('shapeName').textContent=d.name;
+  document.getElementById('faces').textContent=d.faces;
+  document.getElementById('edges').textContent=d.edges;
+  document.getElementById('vertices').textContent=d.vertices;
+  document.getElementById('surfaces').textContent=d.surfaces;
+  document.getElementById('realLife').textContent=d.realLife;
+  document.getElementById('funFact').textContent=d.fun;
+}
+
+function selectShape(key){
+  buildShape(key);
+  document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+key).classList.add('active');
+}
+
+function toggleFeature(feat){
+  if(feat==='faces'){
+    showFaces=!showFaces;
+    faceHighlights.forEach(m=>m.visible=showFaces);
+    document.getElementById('tog-faces').classList.toggle('active',showFaces);
+  } else if(feat==='edges'){
+    showEdgesT=!showEdgesT;
+    edgeLines.forEach(l=>l.visible=showEdgesT);
+    document.getElementById('tog-edges').classList.toggle('active',showEdgesT);
+  } else if(feat==='vertices'){
+    showVerts=!showVerts;
+    vertDots.forEach(v=>v.visible=showVerts);
+    document.getElementById('tog-vertices').classList.toggle('active',showVerts);
+  } else if(feat==='explode'){
+    explodeMode=!explodeMode;
+    document.getElementById('tog-explode').classList.toggle('active',explodeMode);
+    rotGroup.children.forEach((obj,i)=>{
+      if(obj.isMesh && i<3){
+        const factor = explodeMode ? 0.5 : 0;
+        const dir = obj.position.clone().normalize();
+        if(dir.length()===0) dir.set(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).normalize();
+        obj.position.add(dir.multiplyScalar(factor));
+      }
+    });
+  }
+}
+
+function toggleAutoRot(){
+  autoRotate=!autoRotate;
+  document.getElementById('autoRotBtn').textContent = autoRotate ? '⏸ Pause' : '▶ Auto-Rotate';
+  document.getElementById('autoRotBtn').classList.toggle('on',autoRotate);
+}
+
+function resetView(){
+  rotGroup.rotation.set(0,0,0);
+  camera.position.set(0,1.5,4.5);
+}
+
+function zoomIn(){ camera.position.z = Math.max(1.5, camera.position.z-0.5); }
+function zoomOut(){ camera.position.z = Math.min(10, camera.position.z+0.5); }
+
+/* ===================================================
+   SECTION NAV
+=================================================== */
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach((b,i)=>{
+    const ids=['lab','shapes2d','quiz','dragdrop','trueFalse','memory','sort'];
+    b.classList.toggle('active', ids[i]===id);
+  });
+  // init sections
+  if(id==='quiz') initQuiz();
+  if(id==='memory') initMemory();
+  if(id==='dragdrop') initDnd();
+  if(id==='trueFalse') initTF();
+  if(id==='sort') initSort();
+  if(id==='shapes2d') init2D();
+  if(id==='lab' && !renderer) initThree();
+}
+
+/* ===================================================
+   2D SHAPES
+=================================================== */
+function init2D(){
+  const grid = document.getElementById('shapes2dGrid');
+  grid.innerHTML='';
+  SHAPES2D.forEach((s,i)=>{
+    const card = document.createElement('div');
+    card.className='shape2d-card';
+    card.innerHTML=`${s.svg}<h3>${s.name}</h3><p>${s.sides===0?'No':''+s.sides} side${s.sides!==1?'s':''}</p>`;
+    card.onclick=()=>show2DDetail(i, card);
+    grid.appendChild(card);
+  });
+}
+
+function show2DDetail(i, card){
+  document.querySelectorAll('.shape2d-card').forEach(c=>c.classList.remove('selected'));
+  card.classList.add('selected');
+  const s=SHAPES2D[i];
+  const det=document.getElementById('shape2dDetail');
+  det.style.display='block';
+  document.getElementById('s2dName').textContent=s.name;
+  document.getElementById('s2dSvg').innerHTML=s.svg;
+  document.getElementById('s2dSvg').querySelector('svg').style.width='100px';
+  document.getElementById('s2dSvg').querySelector('svg').style.height='100px';
+  document.getElementById('s2dSides').textContent=s.sides===0?'0 (curved)':s.sides;
+  document.getElementById('s2dCorners').textContent=s.corners===0?'0 (no corners)':s.corners;
+  document.getElementById('s2dType').textContent=s.type;
+  document.getElementById('s2dEx').textContent=s.example;
+}
+
+/* ===================================================
+   QUIZ
+=================================================== */
+let quizIdx=0, quizScore=0, quizAnswered=false;
+let quizOrder=[];
+function initQuiz(){
+  quizOrder=[...QUIZ_QUESTIONS].sort(()=>Math.random()-0.5);
+  quizIdx=0; quizScore=0;
+  document.getElementById('quizScore').textContent=0;
+  document.getElementById('quizTotal').textContent=0;
+  document.getElementById('quizStars').textContent='⭐⭐⭐';
+  renderQuiz();
+}
+function renderQuiz(){
+  if(quizIdx>=quizOrder.length){ quizIdx=0; quizOrder=[...QUIZ_QUESTIONS].sort(()=>Math.random()-0.5); }
+  const q=quizOrder[quizIdx];
+  document.getElementById('quizShapeEmoji').textContent=SHAPES3D[q.shape]?.emoji||'📦';
+  document.getElementById('quizQ').innerHTML=SHAPES3D[q.shape].name+' – '+q.q;
+  quizAnswered=false;
+  document.getElementById('nextQuizBtn').style.display='none';
+  const opts=document.getElementById('quizOpts');
+  opts.innerHTML='';
+  const shuffled=[...q.opts].sort(()=>Math.random()-0.5);
+  shuffled.forEach(o=>{
+    const btn=document.createElement('button');
+    btn.className='quiz-opt';
+    btn.textContent=o;
+    btn.onclick=()=>answerQuiz(o,q.ans,btn);
+    opts.appendChild(btn);
+  });
+}
+function answerQuiz(chosen, ans, btn){
+  if(quizAnswered) return;
+  quizAnswered=true;
+  if(chosen===ans){
+    btn.classList.add('correct');
+    quizScore++;
+    document.getElementById('quizScore').textContent=quizScore;
+    showConfetti();
+    showFeedbackMsg('🎉 Brilliant!','Correct! Well done! ⭐');
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.quiz-opt').forEach(b=>{ if(parseInt(b.textContent)===ans) b.classList.add('correct'); });
+    showFeedbackMsg('😅 Almost!','The answer is '+ans+'. Try again!');
+  }
+  document.getElementById('quizTotal').textContent=parseInt(document.getElementById('quizTotal').textContent)+1;
+  document.getElementById('nextQuizBtn').style.display='inline-block';
+}
+function nextQuiz(){ quizIdx++; renderQuiz(); }
+
+/* ===================================================
+   TRUE/FALSE
+=================================================== */
+let tfIdx=0, tfScore=0, tfOrder=[];
+function initTF(){
+  tfOrder=[...TF_QUESTIONS].sort(()=>Math.random()-0.5);
+  tfIdx=0; tfScore=0;
+  document.getElementById('tfScore').textContent=0;
+  document.getElementById('tfTotal').textContent=0;
+  document.getElementById('tfStars').textContent='⭐⭐⭐';
+  renderTF();
+}
+function renderTF(){
+  if(tfIdx>=tfOrder.length){ tfIdx=0; tfOrder=[...TF_QUESTIONS].sort(()=>Math.random()-0.5); }
+  document.getElementById('tfStatement').textContent=tfOrder[tfIdx].stmt;
+  document.getElementById('tfFeedback').textContent='';
+  document.getElementById('nextTFBtn').style.display='none';
+  document.querySelectorAll('.tf-btn').forEach(b=>b.disabled=false);
+}
+function answerTF(chosen){
+  const correct=tfOrder[tfIdx].ans;
+  document.querySelectorAll('.tf-btn').forEach(b=>b.disabled=true);
+  if(chosen===correct){
+    tfScore++;
+    document.getElementById('tfScore').textContent=tfScore;
+    document.getElementById('tfFeedback').innerHTML='<span style="color:var(--green)">🎉 Correct! Amazing job!</span>';
+    showConfetti();
+  } else {
+    document.getElementById('tfFeedback').innerHTML='<span style="color:var(--red)">❌ Not quite! The answer is '+(correct?'TRUE':'FALSE')+'</span>';
+  }
+  document.getElementById('tfTotal').textContent=parseInt(document.getElementById('tfTotal').textContent)+1;
+  document.getElementById('nextTFBtn').style.display='inline-block';
+}
+function nextTF(){ tfIdx++; renderTF(); }
+
+/* ===================================================
+   DRAG & DROP MATCH
+=================================================== */
+let dragItem=null;
+function initDnd(){
+  const items=document.getElementById('dndItems');
+  const targets=document.getElementById('dndTargets');
+  items.innerHTML=''; targets.innerHTML='';
+  const pairs=[...DND_PAIRS].sort(()=>Math.random()-0.5);
+  pairs.forEach(p=>{
+    const el=document.createElement('div');
+    el.className='dnd-item';
+    el.textContent=p.shape;
+    el.draggable=true;
+    el.dataset.shape=p.shape;
+    el.addEventListener('dragstart',e=>{dragItem=el; e.dataTransfer.setData('text/plain',p.shape);});
+    items.appendChild(el);
+  });
+  const shuffledTargets=[...DND_PAIRS].sort(()=>Math.random()-0.5);
+  shuffledTargets.forEach(p=>{
+    const t=document.createElement('div');
+    t.className='dnd-target';
+    t.dataset.shape=p.shape;
+    t.innerHTML=`<span style="font-size:1.5rem">${p.object}</span><small style="color:#aaa">(drop here)</small>`;
+    t.addEventListener('dragover',e=>{e.preventDefault(); t.classList.add('over');});
+    t.addEventListener('dragleave',()=>t.classList.remove('over'));
+    t.addEventListener('drop',e=>{
+      e.preventDefault();
+      t.classList.remove('over');
+      const shape=e.dataTransfer.getData('text/plain');
+      const item=[...document.querySelectorAll('.dnd-item')].find(el=>el.dataset.shape===shape);
+      if(item){ t.appendChild(item); item.draggable=true; }
+    });
+    targets.appendChild(t);
+  });
+}
+function checkDnd(){
+  let correct=0;
+  document.querySelectorAll('.dnd-target').forEach(t=>{
+    const item=t.querySelector('.dnd-item');
+    if(item && item.dataset.shape===t.dataset.shape){
+      t.classList.add('correct'); correct++;
+    } else if(item){
+      t.classList.add('wrong');
+    }
+  });
+  if(correct===DND_PAIRS.length) showConfetti(), showFeedbackMsg('🎉 Perfect Match!','You matched all shapes! Superstar!');
+  else showFeedbackMsg('Keep Trying! 😊',correct+' out of '+DND_PAIRS.length+' correct!');
+}
+function resetDnd(){ document.querySelectorAll('.dnd-target').forEach(t=>{ t.classList.remove('correct','wrong'); }); initDnd(); }
+
+/* ===================================================
+   MEMORY
+=================================================== */
+const MEM_ITEMS = [
+  {name:'Cube',emoji:'📦'},{name:'Sphere',emoji:'⚽'},
+  {name:'Cone',emoji:'🍦'},{name:'Cylinder',emoji:'🥫'},
+  {name:'Pyramid',emoji:'⛺'},{name:'Prism',emoji:'🔷'},
+  {name:'Circle',emoji:'⭕'},{name:'Triangle',emoji:'🔺'}
+];
+let memFlipped=[], memMatched=[], memMoves=0, memPairs=0;
+function initMemory(){
+  memFlipped=[]; memMatched=[]; memMoves=0; memPairs=0;
+  document.getElementById('memPairs').textContent=0;
+  document.getElementById('memTotal').textContent=MEM_ITEMS.length;
+  document.getElementById('memMoves').textContent=0;
+  const pairs=[...MEM_ITEMS,...MEM_ITEMS].sort(()=>Math.random()-0.5);
+  const grid=document.getElementById('memGrid');
+  grid.innerHTML='';
+  pairs.forEach((item,i)=>{
+    const card=document.createElement('div');
+    card.className='mem-card';
+    card.dataset.name=item.name;
+    card.dataset.emoji=item.emoji;
+    card.dataset.idx=i;
+    card.textContent='❓';
+    card.onclick=()=>flipMemCard(card);
+    grid.appendChild(card);
+  });
+}
+function flipMemCard(card){
+  if(card.classList.contains('matched')||memFlipped.length===2||memFlipped.includes(card)) return;
+  card.textContent=card.dataset.emoji;
+  card.classList.add('flipped');
+  memFlipped.push(card);
+  if(memFlipped.length===2){
+    memMoves++;
+    document.getElementById('memMoves').textContent=memMoves;
+    if(memFlipped[0].dataset.name===memFlipped[1].dataset.name){
+      memFlipped.forEach(c=>c.classList.add('matched'));
+      memPairs++;
+      document.getElementById('memPairs').textContent=memPairs;
+      memFlipped=[];
+      if(memPairs===MEM_ITEMS.length){ showConfetti(); showFeedbackMsg('🏆 You Won!','All pairs matched! Amazing!'); }
+    } else {
+      setTimeout(()=>{
+        memFlipped.forEach(c=>{c.textContent='❓'; c.classList.remove('flipped');});
+        memFlipped=[];
+      },900);
+    }
+  }
+}
+
+/* ===================================================
+   SORT
+=================================================== */
+let sortDragItem=null;
+function initSort(){
+  const items=document.getElementById('sortItems');
+  const zones=document.getElementById('sortZones');
+  items.innerHTML=''; zones.innerHTML='';
+  const allItems=[
+    {name:'Cube',cat:'3D Shapes'},{name:'Sphere',cat:'3D Shapes'},{name:'Cylinder',cat:'3D Shapes'},
+    {name:'Cone',cat:'3D Shapes'},{name:'Pyramid',cat:'3D Shapes'},
+    {name:'Circle',cat:'2D Shapes'},{name:'Square',cat:'2D Shapes'},{name:'Triangle',cat:'2D Shapes'},
+    {name:'Rectangle',cat:'2D Shapes'},{name:'Hexagon',cat:'2D Shapes'},
+  ].sort(()=>Math.random()-0.5);
+  allItems.forEach(it=>{
+    const el=document.createElement('div');
+    el.className='sort-item';
+    el.textContent=it.name;
+    el.draggable=true;
+    el.dataset.cat=it.cat;
+    el.addEventListener('dragstart',e=>{sortDragItem=el; e.dataTransfer.setData('text/plain',it.cat);});
+    items.appendChild(el);
+  });
+  ['3D Shapes','2D Shapes'].forEach(cat=>{
+    const zone=document.createElement('div');
+    zone.className='sort-zone';
+    zone.dataset.cat=cat;
+    zone.innerHTML=`<h3 style="color:${cat==='3D Shapes'?'var(--purple)':'var(--blue)'}">${cat}</h3>`;
+    zone.addEventListener('dragover',e=>{e.preventDefault(); zone.classList.add('over');});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('over'));
+    zone.addEventListener('drop',e=>{
+      e.preventDefault(); zone.classList.remove('over');
+      if(sortDragItem) zone.appendChild(sortDragItem);
+    });
+    zones.appendChild(zone);
+  });
+}
+function checkSort(){
+  let correct=0, total=0;
+  document.querySelectorAll('.sort-zone').forEach(zone=>{
+    const cat=zone.dataset.cat;
+    zone.querySelectorAll('.sort-item').forEach(item=>{ total++; if(item.dataset.cat===cat) correct++; });
+  });
+  if(correct===total && total>0) showConfetti(), showFeedbackMsg('🏆 Perfect Sort!','All shapes sorted correctly!');
+  else showFeedbackMsg('Keep Going! 😊',correct+' of '+total+' correctly sorted!');
+}
+
+/* ===================================================
+   FEEDBACK / CONFETTI
+=================================================== */
+function showFeedbackMsg(title, msg){
+  const fb=document.getElementById('feedback');
+  document.getElementById('fbTitle').textContent=title;
+  document.getElementById('fbMsg').textContent=msg;
+  document.getElementById('fbIcon').textContent=title.includes('!')?'🎉':'😊';
+  fb.classList.add('show');
+}
+function hideFeedback(){ document.getElementById('feedback').classList.remove('show'); }
+function showConfetti(){
+  const colors=['#FF6B9D','#9B59B6','#3498DB','#1ABC9C','#FFD93D','#FF8C42','#6BCB77'];
+  for(let i=0;i<40;i++){
+    const piece=document.createElement('div');
+    piece.className='confetti-piece';
+    piece.style.cssText=`left:${Math.random()*100}vw; background:${colors[Math.floor(Math.random()*colors.length)]}; animation-delay:${Math.random()*0.5}s; animation-duration:${2+Math.random()*2}s; transform:rotate(${Math.random()*360}deg);`;
+    document.body.appendChild(piece);
+    setTimeout(()=>piece.remove(), 4000);
+  }
+}
+
+/* ===================================================
+   INIT
+=================================================== */
+window.addEventListener('load', ()=>{
+  initThree();
+  init2D();
+  initQuiz();
+  initMemory();
+  initDnd();
+  initTF();
+  initSort();
+});
+</script>
+</body>
+</html>
